@@ -1,5 +1,5 @@
 # AI B2B Lead Generation & Qualification
-
+![Workflow Architecture](lead-generation-workflow.png)
 ## Overview
 
 An AI-powered lead generation and qualification automation built with n8n.
