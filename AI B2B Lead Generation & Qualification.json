@@ -1,0 +1,360 @@
+{
+  "name": "AI B2B Lead Generation & Qualification",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "B2B Lead Finder",
+        "formDescription": "Find and qualify B2B leads based on your target industry and business requirements",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Industry",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Location",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Role",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Number of leads",
+              "fieldType": "number",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -672,
+        -224
+      ],
+      "id": "bc4c2477-47fb-44f9-bebb-fa49edf83b3d",
+      "name": "Receive Lead Request",
+      "webhookId": "53851982-1c32-4920-a6e7-f5024d4a684a"
+    },
+    {
+      "parameters": {
+        "url": "https://dummyjson.com/users",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "={{ $json[\"Number of leads\"] }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "={{ $json.Location }}"
+            },
+            {
+              "name": "role",
+              "value": "={{ $json['Target Role'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -496,
+        -224
+      ],
+      "id": "1394fead-925d-46c2-a826-ab1c434dec2c",
+      "name": "Fetch Leads"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "users",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -224
+      ],
+      "id": "db08c94f-88a1-4414-bb5b-6ced28fc02a1",
+      "name": "Split Leads"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -64,
+        -224
+      ],
+      "id": "806eb2a5-8cd7-41c9-8c51-e42b3e69080b",
+      "name": "Process Leads"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemma-4-31b-it",
+          "mode": "list",
+          "cachedResultName": "models/gemma-4-31b-it"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=أنت مساعد متخصص في تأهيل B2B Leads.\n\nبيانات العميل المحتمل:\nالاسم: {{ $json.firstName }} {{ $json.lastName }}\nالإيميل: {{ $json.email }}\nالشركة: {{ $json.company.name }}\nالمدينة: {{ $json.address.city }}\n\nمعايير البحث التي أدخلها المستخدم:\nIndustry: {{ $('Receive Lead Request').item.json.Industry }}\nLocation: {{ $('Receive Lead Request').item.json.Location }}\nTarget Role: {{ $('Receive Lead Request').item.json['Target Role'] }}\n\nالمطلوب:\n1. قيّم مدى ملاءمة هذا العميل المحتمل للمعايير المطلوبة.\n2. أعطه Lead Score: High أو Medium أو Low.\n3. اكتب سببًا مختصرًا للتقييم.\n4. اكتب رسالة Email مهنية ومخصصة يمكن إرسالها لهذا العميل المحتمل.\n\nأجب بهذا الشكل فقط:\n\nLead Score: High/Medium/Low\nReason: ...\nEmail Subject: ...\nEmail Body: ...\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "2c6b80d5-279d-4547-895a-343bcb0a1134",
+      "name": "AI Lead Qualification",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TRwgLf9JpWNdES8A",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ePYFkJADiiJY--6mM7XbkXzKiAgpaLi7K0Xe0CffMEs",
+          "mode": "list",
+          "cachedResultName": "B2B Lead Generation System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ePYFkJADiiJY--6mM7XbkXzKiAgpaLi7K0Xe0CffMEs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ePYFkJADiiJY--6mM7XbkXzKiAgpaLi7K0Xe0CffMEs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "personalized oitch": "={{ $json.content.parts[1].text }}",
+            "name": "={{ $('Process Leads').item.json.firstName }} {{ $('Process Leads').item.json.lastName }}",
+            "email": "={{ $('Process Leads').item.json.email }}",
+            "company": "={{ $('Process Leads').item.json.company.name}}",
+            "lead score": "={{ $json.content.parts[1].text.match(/Lead Score:\\s*(High|Medium|Low)/i)?.[1] || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead score",
+              "displayName": "lead score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "personalized oitch",
+              "displayName": "personalized oitch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        592,
+        -96
+      ],
+      "id": "737182c1-ed6f-4260-8757-8080cbb46499",
+      "name": "Save Lead to Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pYGXo3xRfU3PUyeR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "sarayousfi068@gmail.com",
+        "subject": "تم الانتهاء من استخراج وتنظيم بيانات Leads بنجاح!",
+        "message": "مرحباً، تم معالجة جميع العملاء المستهدفين وإضافتهم بنجاح إلى جدول Google Sheets.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        -304
+      ],
+      "id": "6641cf4d-e3b5-43ec-abc1-b4c5ec1ae36d",
+      "name": "Send Personalized Email",
+      "webhookId": "1ed0dcbb-ff78-41e0-9998-d8a33ddd9f17",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "tLtOXrDqpNxNDQQM",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Lead Request": {
+      "main": [
+        [
+          {
+            "node": "Fetch Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Leads": {
+      "main": [
+        [
+          {
+            "node": "Split Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Leads": {
+      "main": [
+        [
+          {
+            "node": "Process Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Leads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Lead Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Qualification": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Personalized Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Process Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Personalized Email": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ae3d8b76-3d07-49ba-9f76-e3516030317c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f6303bd2cf2ca84f819517369e0420d80e0e7f78d64c195f322f1afbb5cee778"
+  },
+  "nodeGroups": [],
+  "id": "tJcWIw30dUiSSurA",
+  "tags": []
+}
